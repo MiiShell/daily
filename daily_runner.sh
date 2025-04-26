@@ -1,18 +1,16 @@
 #!/bin/bash
-# daily_runner.sh - Runs other scripts once daily
+# daily_runner.sh - Run scripts and commands once daily
 
-# Define script paths
-SCRIPTS=(
-    "/path/to/first_script.sh"
-    "/path/to/second_script.sh"
-    "/path/to/third_script.sh"
+# Commands to run (bash, python, etc.)
+COMMANDS=(
+    "bash /path/to/your_bash_script.sh"
+    "python3 /path/to/your_python_script.py"
+    "/path/to/another_script.sh"
+    "python3 /path/to/another_script.py"
 )
 
-# Execute each script
-for SCRIPT in "${SCRIPTS[@]}"; do
-    if [[ -x "$SCRIPT" ]]; then
-        "$SCRIPT"
-    else
-        echo "Warning: $SCRIPT is not executable or not found."
-    fi
+# Execute each command
+for CMD in "${COMMANDS[@]}"; do
+    echo "Running: $CMD"
+    eval "$CMD"
 done
