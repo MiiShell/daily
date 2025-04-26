@@ -1,46 +1,57 @@
 #!/bin/bash
-# daily_runner.sh - macOS daily runner with logging and notifications
+# daily_runner.sh - macOS runner with structured logs and notifications
 
 # Load user profile
 source ~/.bash_profile 2>/dev/null || source ~/.zprofile 2>/dev/null
 
-# Define log files
+# Define log directory and file
 LOG_DIR="$HOME/daily_runner_logs"
-SUCCESS_LOG="$LOG_DIR/success.log"
-FAILURE_LOG="$LOG_DIR/failure.log"
+TODAY="$(date '+%Y-%m-%d')"
+LOG_FILE="$LOG_DIR/run-$TODAY.log"
 
-# Define commands
+# Define commands with environment labels
+# Format: "ENV COMMAND"
 COMMANDS=(
-    "/bin/bash /path/to/your_bash_script.sh"
-    "/usr/bin/python3 /path/to/your_python_script.py"
-    "/path/to/another_script.sh"
-    "/usr/bin/python3 /path/to/another_script.py"
+    "bash /path/to/your_bash_script.sh"
+    "python3 /path/to/your_python_script.py"
+    "bash /path/to/another_script.sh"
+    "python3 /path/to/another_script.py"
 )
 
 # Prepare log directory
 mkdir -p "$LOG_DIR"
 
-# Clean old logs
-: > "$SUCCESS_LOG"
-: > "$FAILURE_LOG"
-
 ALL_SUCCESS=true
 
+# Header for new log file (only if empty)
+if [[ ! -s "$LOG_FILE" ]]; then
+    printf "%-20s | %-25s | %-10s | %-10s\n" "DATE" "SCRIPT" "ENV" "STATUS" > "$LOG_FILE"
+    printf -- "-------------------------------------------------------------------------------\n" >> "$LOG_FILE"
+fi
+
 # Execute commands
-for CMD in "${COMMANDS[@]}"; do
-    TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$TIMESTAMP Running: $CMD"
-    if eval "$CMD"; then
-        echo "$TIMESTAMP SUCCESS: $CMD" >> "$SUCCESS_LOG"
+for ENTRY in "${COMMANDS[@]}"; do
+    ENV=$(echo "$ENTRY" | awk '{print $1}')
+    SCRIPT_PATH=$(echo "$ENTRY" | awk '{print $2}')
+    SCRIPT_NAME=$(basename "$SCRIPT_PATH")
+    DATE_NOW="$(date '+%Y-%m-%d %H:%M:%S')"
+
+    echo "$DATE_NOW Running: [$ENV] $SCRIPT_PATH"
+    
+    if eval "$ENTRY"; then
+        STATUS="SUCCESS"
     else
-        echo "$TIMESTAMP FAILURE: $CMD" >> "$FAILURE_LOG"
+        STATUS="FAILURE"
         ALL_SUCCESS=false
     fi
+
+    # Write structured log line
+    printf "%-20s | %-25s | %-10s | %-10s\n" "$DATE_NOW" "$SCRIPT_NAME" "$ENV" "$STATUS" >> "$LOG_FILE"
 done
 
-# Notify based on result
+# Notification
 if $ALL_SUCCESS; then
-    osascript -e 'display notification "All scripts executed successfully!" with title "Daily Runner ✅"'
+    osascript -e "display notification \"All scripts succeeded. Log: run-$TODAY.log\" with title \"Daily Runner ✅\""
 else
-    osascript -e 'display notification "Some scripts failed. Check failure.log!" with title "Daily Runner ⚠️"'
+    osascript -e "display notification \"Some scripts failed. Log: run-$TODAY.log\" with title \"Daily Runner ⚠️\""
 fi
