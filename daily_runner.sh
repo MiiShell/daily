@@ -1,16 +1,19 @@
 #!/bin/bash
-# daily_runner.sh - Run scripts and commands once daily
+# daily_runner.sh - macOS optimized daily runner
 
-# Commands to run (bash, python, etc.)
+# Load user profile for environment variables (important on macOS cron)
+source ~/.bash_profile 2>/dev/null || source ~/.zprofile 2>/dev/null
+
+# Define commands to execute
 COMMANDS=(
-    "bash /path/to/your_bash_script.sh"
-    "python3 /path/to/your_python_script.py"
+    "/bin/bash /path/to/your_bash_script.sh"
+    "/usr/bin/python3 /path/to/your_python_script.py"
     "/path/to/another_script.sh"
-    "python3 /path/to/another_script.py"
+    "/usr/bin/python3 /path/to/another_script.py"
 )
 
 # Execute each command
 for CMD in "${COMMANDS[@]}"; do
-    echo "Running: $CMD"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') Running: $CMD"
     eval "$CMD"
 done
